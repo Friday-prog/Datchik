@@ -1,0 +1,1519 @@
+<!DOCTYPE html>
+<html lang="ru" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Умный тренажер для сварки — Постановка мышечной памяти сварщика</title>
+  <meta name="description" content="Инновационный тренажер-корректор для сварки на базе IMU-сенсоров. Снижает брак до 30%, сокращает время постановки руки мастера в 2 раза. Проект программы Студенческий Стартап.">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <!-- Google Fonts Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            brand: {
+              orange: '#f97316',
+              amber: '#f59e0b',
+              glow: '#fb923c',
+              cyan: '#06b6d4',
+              blue: '#3b82f6',
+              dark: '#090d16',
+              surface: '#0f172a',
+              card: '#131d35'
+            }
+          },
+          animation: {
+            'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            'weld-spark': 'spark 1.5s infinite',
+          },
+          keyframes: {
+            spark: {
+              '0%, 100%': { opacity: '0.4', transform: 'scale(1)' },
+              '50%': { opacity: '1', transform: 'scale(1.08)' },
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Custom glow and grid background */
+    .bg-grid-pattern {
+      background-size: 40px 40px;
+      background-image: 
+        linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    }
+    .welding-glow {
+      box-shadow: 0 0 50px -10px rgba(249, 115, 22, 0.3);
+    }
+    .neon-border-orange {
+      box-shadow: 0 0 15px -3px rgba(249, 115, 22, 0.4);
+    }
+    .neon-border-cyan {
+      box-shadow: 0 0 15px -3px rgba(6, 182, 212, 0.4);
+    }
+    /* Hide scrollbar for tabs */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+</head>
+<body class="bg-[#070b14] text-slate-200 font-sans antialiased selection:bg-orange-500 selection:text-white">
+
+  <!-- ================= TOP NOTIFICATION BAR ================= -->
+  <div class="bg-gradient-to-r from-orange-950 via-slate-900 to-cyan-950 border-b border-orange-500/20 py-2 px-4 text-xs sm:text-sm text-center font-medium text-orange-200">
+    <div class="max-w-7xl mx-auto flex items-center justify-center gap-2 flex-wrap">
+      <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-orange-500/20 text-orange-400 border border-orange-500/30">
+        Грант VII очереди
+      </span>
+      <span>Победитель федерального конкурса «Студенческий стартап» Фонда содействия инновациям</span>
+      <a href="#letters" class="text-cyan-400 hover:text-cyan-300 underline font-semibold ml-1">Письма поддержки от заводов &rarr;</a>
+    </div>
+  </div>
+
+  <!-- ================= HEADER & NAVIGATION ================= -->
+  <header class="sticky top-0 z-50 bg-[#090d16]/90 backdrop-blur-md border-b border-slate-800">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-20">
+        
+        <!-- Logo -->
+        <a href="#" class="flex items-center gap-3 group">
+          <div class="w-11 h-11 rounded-xl bg-gradient-to-tr from-orange-600 via-amber-500 to-cyan-400 p-0.5 transition-transform group-hover:scale-105 shadow-lg shadow-orange-500/20">
+            <div class="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center">
+              <i data-lucide="flame" class="w-6 h-6 text-orange-400 group-hover:text-amber-300 transition-colors"></i>
+            </div>
+          </div>
+          <div>
+            <div class="text-lg font-black tracking-wider uppercase text-white flex items-center gap-1.5">
+              WeldSmart <span class="text-xs bg-orange-500/20 text-orange-400 border border-orange-500/30 font-mono px-1.5 py-0.2 rounded">IMU-PRO</span>
+            </div>
+            <div class="text-[11px] text-slate-400 font-medium">Умный тренажер для сварки</div>
+          </div>
+        </a>
+
+        <!-- Desktop Nav -->
+        <nav class="hidden lg:flex items-center gap-7 text-sm font-medium text-slate-300">
+          <a href="#problems" class="hover:text-orange-400 transition-colors">Проблема</a>
+          <a href="#solution" class="hover:text-orange-400 transition-colors">Технология</a>
+          <a href="#demo" class="hover:text-orange-400 transition-colors">Интерактив</a>
+          <a href="#comparison" class="hover:text-orange-400 transition-colors">Сравнение</a>
+          <a href="#audiences" class="hover:text-orange-400 transition-colors">Сегменты</a>
+          <a href="#budget" class="hover:text-orange-400 transition-colors">Спецификация</a>
+          <a href="#contacts" class="hover:text-orange-400 transition-colors">Контакты</a>
+        </nav>
+
+        <!-- Header Actions -->
+        <div class="hidden sm:flex items-center gap-5">
+          <div class="text-right hidden xl:block">
+            <a href="tel:+79177384554" class="text-sm font-semibold text-slate-100 hover:text-orange-400 block tracking-tight">
+              +7 (917) 738-45-54
+            </a>
+            <span class="text-[11px] text-slate-400">г. Уфа, полигон УГНТУ</span>
+          </div>
+          <a href="#lead-form" class="relative group px-5 py-2.5 rounded-xl font-semibold text-sm text-slate-900 bg-gradient-to-r from-amber-400 via-orange-500 to-amber-500 hover:from-amber-300 hover:to-orange-400 transition shadow-lg shadow-orange-500/25 flex items-center gap-2">
+            <span>Запросить КП</span>
+            <i data-lucide="arrow-right" class="w-4 h-4 transition-transform group-hover:translate-x-0.5"></i>
+          </a>
+        </div>
+
+        <!-- Mobile Menu Button -->
+        <button id="mobile-menu-btn" class="lg:hidden p-2 text-slate-400 hover:text-white focus:outline-none" aria-label="Меню">
+          <i data-lucide="menu" class="w-7 h-7"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Mobile Dropdown -->
+    <div id="mobile-menu" class="lg:hidden hidden border-b border-slate-800 bg-slate-950 px-6 py-5 space-y-4">
+      <div class="flex flex-col gap-3 font-medium text-slate-300">
+        <a href="#problems" class="py-1 hover:text-orange-400 mobile-nav-link">Экономика потерь</a>
+        <a href="#solution" class="py-1 hover:text-orange-400 mobile-nav-link">Технологическая основа</a>
+        <a href="#demo" class="py-1 hover:text-orange-400 mobile-nav-link">Интерактивный симулятор</a>
+        <a href="#comparison" class="py-1 hover:text-orange-400 mobile-nav-link">Сравнение с VR и Fronius</a>
+        <a href="#audiences" class="py-1 hover:text-orange-400 mobile-nav-link">Для колледжей и заводов</a>
+        <a href="#letters" class="py-1 hover:text-orange-400 mobile-nav-link">Письма поддержки</a>
+        <a href="#contacts" class="py-1 hover:text-orange-400 mobile-nav-link">Контакты</a>
+      </div>
+      <div class="pt-4 border-t border-slate-800 flex flex-col gap-3">
+        <a href="tel:+79177384554" class="text-sm font-semibold text-orange-400">+7 (917) 738-45-54</a>
+        <a href="#lead-form" class="mobile-nav-link w-full text-center py-3 rounded-xl font-semibold text-sm text-slate-900 bg-gradient-to-r from-amber-400 to-orange-500">
+          Запросить КП / Демо-образец
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= HERO SECTION ================= -->
+  <section class="relative pt-12 pb-24 overflow-hidden bg-grid-pattern">
+    <!-- Ambient Radial Glows -->
+    <div class="absolute top-10 left-1/2 -translate-x-1/2 w-[700px] h-[400px] bg-gradient-to-b from-orange-600/15 via-amber-600/5 to-transparent blur-3xl pointer-events-none rounded-full"></div>
+    <div class="absolute top-1/3 -right-20 w-[450px] h-[450px] bg-cyan-600/10 blur-[120px] pointer-events-none rounded-full"></div>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+      <div class="grid lg:grid-cols-12 gap-12 items-center">
+        
+        <!-- Left Column: Copy & Value Proposition -->
+        <div class="lg:col-span-7 space-y-6 text-center lg:text-left">
+          
+          <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-800/90 border border-slate-700/80 text-xs sm:text-sm text-slate-300">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span>Заявка № СтС-623172 • Федеральный проект ПУТП</span>
+          </div>
+
+          <h1 class="text-3xl sm:text-5xl lg:text-5xl font-extrabold tracking-tight text-white leading-[1.15]">
+            Умный тренажер для сварки: 
+            <span class="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-orange-400 to-rose-400">
+              постановка мышечной памяти
+            </span> в 2 раза быстрее
+          </h1>
+
+          <p class="text-base sm:text-lg text-slate-300 max-w-2xl mx-auto lg:mx-0 leading-relaxed font-light">
+            Компактный насадочный модуль с высокоточным <strong class="text-white font-medium">IMU-сенсором</strong> и мгновенной светозвуковой индикацией ошибок угла горелки. Обеспечивает прямое сокращение брака и перерасхода материалов на <span class="text-orange-400 font-semibold underline decoration-orange-500/50">30%</span>.
+          </p>
+
+          <!-- Action Buttons -->
+          <div class="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 pt-2">
+            <a href="#lead-form" class="w-full sm:w-auto px-7 py-4 rounded-xl font-bold text-slate-950 bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-300 hover:to-orange-400 transition transform hover:-translate-y-0.5 shadow-xl shadow-orange-500/25 flex items-center justify-center gap-2">
+              <i data-lucide="file-spreadsheet" class="w-5 h-5 text-slate-950"></i>
+              <span>Рассчитать поставку для учреждения</span>
+            </a>
+            <a href="#demo" class="w-full sm:w-auto px-6 py-4 rounded-xl font-semibold text-slate-200 bg-slate-900/90 border border-slate-700 hover:border-slate-500 hover:bg-slate-800 transition flex items-center justify-center gap-2">
+              <i data-lucide="play-circle" class="w-5 h-5 text-cyan-400"></i>
+              <span>Протестировать индикатор</span>
+            </a>
+          </div>
+
+          <!-- Key Quick Metrics -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-6 border-t border-slate-800/80">
+            <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-3 text-left">
+              <div class="text-xl sm:text-2xl font-bold text-cyan-400 font-mono">±2°</div>
+              <div class="text-xs text-slate-400 mt-0.5">Точность замера угла шва</div>
+            </div>
+            <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-3 text-left">
+              <div class="text-xl sm:text-2xl font-bold text-emerald-400 font-mono">8+ час</div>
+              <div class="text-xs text-slate-400 mt-0.5">Автономная работа</div>
+            </div>
+            <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-3 text-left">
+              <div class="text-xl sm:text-2xl font-bold text-amber-400 font-mono">115 тыс. ₽</div>
+              <div class="text-xs text-slate-400 mt-0.5">В 3-4 раза дешевле аналогов</div>
+            </div>
+            <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-3 text-left">
+              <div class="text-xl sm:text-2xl font-bold text-purple-400 font-mono">Plug&Play</div>
+              <div class="text-xs text-slate-400 mt-0.5">Без сложных настроек</div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Right Column: Interactive Hardware Preview Card -->
+        <div class="lg:col-span-5">
+          <div class="relative mx-auto max-w-md lg:max-w-none">
+            
+            <!-- Glow background -->
+            <div class="absolute -inset-1 rounded-2xl bg-gradient-to-r from-orange-500/30 via-cyan-500/20 to-amber-500/30 blur-xl opacity-75"></div>
+
+            <div class="relative bg-slate-900/90 border border-slate-700/80 rounded-2xl p-6 sm:p-7 shadow-2xl backdrop-blur-xl">
+              
+              <!-- Card Header -->
+              <div class="flex items-center justify-between pb-4 border-b border-slate-800">
+                <div class="flex items-center gap-2">
+                  <span class="w-3 h-3 rounded-full bg-orange-500 animate-ping"></span>
+                  <span class="text-xs font-mono font-semibold uppercase text-slate-300">Модуль коррекции горелки</span>
+                </div>
+                <span class="text-xs bg-slate-800 text-cyan-400 px-2 py-1 rounded font-mono border border-cyan-500/20">
+                  MCU ESP32 + MPU-6050
+                </span>
+              </div>
+
+              <!-- Graphic / Illustration of the device on torch -->
+              <div class="my-6 relative bg-gradient-to-b from-slate-950 to-slate-900 rounded-xl p-6 border border-slate-800 flex flex-col items-center justify-center min-h-[240px] text-center overflow-hidden">
+                
+                <!-- Welding Torch Graphic with Sensor Mockup -->
+                <div class="relative w-48 h-32 flex items-center justify-center">
+                  <!-- Torch Nozzle -->
+                  <div class="w-32 h-6 bg-gradient-to-r from-amber-700 via-amber-600 to-yellow-600 rounded-md rotate-[25deg] shadow-lg relative">
+                    <!-- Sensor Module Clipped On Torch -->
+                    <div id="sensor-module-badge" class="absolute -top-7 left-6 px-3 py-1.5 rounded-lg bg-slate-800 border-2 border-emerald-500 shadow-lg text-left transition-all duration-300">
+                      <div class="flex items-center gap-1.5">
+                        <div id="sensor-led-pill" class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></div>
+                        <span id="sensor-status-label" class="text-[10px] font-mono font-bold text-emerald-300">УГОЛ НОРМА</span>
+                      </div>
+                      <div class="text-[9px] text-slate-400 font-mono mt-0.5">Tilt: <span id="sensor-angle-val">45.2°</span></div>
+                    </div>
+
+                    <!-- Ceramic Nozzle tip -->
+                    <div class="absolute -right-3 top-0 w-4 h-6 bg-pink-300 rounded-r-md"></div>
+                    <!-- Spark Effect -->
+                    <div id="spark-effect" class="absolute -right-8 top-1 w-8 h-8 rounded-full bg-amber-400/40 blur-sm animate-weld-spark"></div>
+                  </div>
+                </div>
+
+                <div class="text-xs text-slate-400 mt-2 font-mono">
+                  [Крепление к рукоятке/соплу любой типовой MIG/MAG/TIG горелки]
+                </div>
+              </div>
+
+              <!-- Mini Feature checklist -->
+              <div class="space-y-2.5 text-xs text-slate-300">
+                <div class="flex items-center gap-2">
+                  <i data-lucide="check" class="w-4 h-4 text-emerald-400 shrink-0"></i>
+                  <span>Фильтрация шумов алгоритмом Калмана в реальном времени</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <i data-lucide="check" class="w-4 h-4 text-emerald-400 shrink-0"></i>
+                  <span>Защита от электромагнитных помех сварочной дуги (экранирование)</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <i data-lucide="check" class="w-4 h-4 text-emerald-400 shrink-0"></i>
+                  <span>Аудиосигнал дублирует световой индикатор при яркой дуге</span>
+                </div>
+              </div>
+
+              <!-- Quick Quote / Subtext -->
+              <div class="mt-5 p-3 rounded-lg bg-orange-500/10 border border-orange-500/20 text-[11px] text-orange-300 flex items-center justify-between">
+                <span>Розничная цена тренажерного комплекса:</span>
+                <span class="font-bold font-mono text-sm text-white">115 000 ₽</span>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= LOGOS / PARTNERS / RECOGNITION ================= -->
+  <section class="border-y border-slate-800/80 bg-slate-950/60 py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <p class="text-center text-xs font-semibold uppercase tracking-wider text-slate-400 mb-6">
+        Проект поддержан институтами развития и промышленными предприятиями РФ
+      </p>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-6 items-center justify-items-center opacity-75 hover:opacity-100 transition-opacity">
+        <div class="text-center p-3 rounded-lg bg-slate-900/40 border border-slate-800 w-full max-w-[220px]">
+          <div class="text-sm font-bold text-white tracking-wide">ФАСИ (Фонд Бортника)</div>
+          <div class="text-[10px] text-slate-400">Фонд содействия инновациям</div>
+        </div>
+        <div class="text-center p-3 rounded-lg bg-slate-900/40 border border-slate-800 w-full max-w-[220px]">
+          <div class="text-sm font-bold text-white tracking-wide">ПУТП</div>
+          <div class="text-[10px] text-slate-400">Платформа университетского техпреда</div>
+        </div>
+        <div class="text-center p-3 rounded-lg bg-slate-900/40 border border-slate-800 w-full max-w-[220px]">
+          <div class="text-sm font-bold text-cyan-400 tracking-wide">УГНТУ</div>
+          <div class="text-[10px] text-slate-400">Испытательный полигон сварки</div>
+        </div>
+        <div class="text-center p-3 rounded-lg bg-slate-900/40 border border-slate-800 w-full max-w-[220px]">
+          <div class="text-sm font-bold text-amber-400 tracking-wide">ООО «Башнефть-Строй»</div>
+          <div class="text-[10px] text-slate-400">Письмо заинтересованности в опытной серии</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= PAIN POINTS / ECONOMICS OF LOSSES ================= -->
+  <section id="problems" class="py-20 bg-slate-900/40 relative">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <div class="text-center max-w-3xl mx-auto mb-16">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-semibold uppercase tracking-wider mb-3">
+          Аналитика ФИОКО и опросы мастеров
+        </div>
+        <h2 class="text-2xl sm:text-4xl font-extrabold text-white tracking-tight">
+          Почему классическая подготовка сварщиков обходится так дорого?
+        </h2>
+        <p class="text-slate-400 mt-3 text-sm sm:text-base">
+          Анализ образовательного процесса в колледжах и корпоративных центрах показывает критические потери времени и ресурсов на исправление первичных двигательных ошибок.
+        </p>
+      </div>
+
+      <div class="grid md:grid-cols-3 gap-8">
+        
+        <!-- Card 1 -->
+        <div class="relative bg-slate-900 border border-slate-800 rounded-2xl p-7 hover:border-orange-500/40 transition group">
+          <div class="w-12 h-12 rounded-xl bg-orange-500/10 border border-orange-500/30 flex items-center justify-center text-orange-400 mb-5 group-hover:scale-110 transition-transform">
+            <i data-lucide="clock" class="w-6 h-6"></i>
+          </div>
+          <div class="text-3xl sm:text-4xl font-black text-white font-mono mb-2">
+            до 40%
+          </div>
+          <h3 class="text-lg font-bold text-slate-200 mb-2">
+            Времени уходит на исправление ошибок угла
+          </h3>
+          <p class="text-sm text-slate-400 leading-relaxed">
+            По данным опроса 15 ведущих мастеров СПО, до 40% практических часов тратится исключительно на ручную постановку правильного пространственного угла горелки.
+          </p>
+          <div class="mt-4 pt-4 border-t border-slate-800 text-xs text-slate-500">
+            Источник: Экспертные интервью мастеров-наставников
+          </div>
+        </div>
+
+        <!-- Card 2 -->
+        <div class="relative bg-slate-900 border border-slate-800 rounded-2xl p-7 hover:border-rose-500/40 transition group">
+          <div class="w-12 h-12 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-400 mb-5 group-hover:scale-110 transition-transform">
+            <i data-lucide="trending-down" class="w-6 h-6"></i>
+          </div>
+          <div class="text-3xl sm:text-4xl font-black text-rose-400 font-mono mb-2">
+            15 000 ₽
+          </div>
+          <h3 class="text-lg font-bold text-slate-200 mb-2">
+            Прямой перерасход материалов на группу
+          </h3>
+          <p class="text-sm text-slate-400 leading-relaxed">
+            Ежемесячный убыток на учебную группу из 10 человек из-за брака: испорченная проволока, сожженные электроды, защитная газовая смесь и металлические заготовки.
+          </p>
+          <div class="mt-4 pt-4 border-t border-slate-800 text-xs text-slate-500">
+            Источник: Нормативы расходов СПб колледжа судостроения
+          </div>
+        </div>
+
+        <!-- Card 3 -->
+        <div class="relative bg-slate-900 border border-slate-800 rounded-2xl p-7 hover:border-amber-500/40 transition group">
+          <div class="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 mb-5 group-hover:scale-110 transition-transform">
+            <i data-lucide="user-check" class="w-6 h-6"></i>
+          </div>
+          <div class="text-3xl sm:text-4xl font-black text-amber-400 font-mono mb-2">
+            до 60%
+          </div>
+          <h3 class="text-lg font-bold text-slate-200 mb-2">
+            Времени наставника занято надзором
+          </h3>
+          <p class="text-sm text-slate-400 leading-relaxed">
+            Вместо разбора технологии сложных сварных швов (вертикальных, потолочных, неповоротных стыков труб) мастер физически стоит рядом и корректирует локоть ученика.
+          </p>
+          <div class="mt-4 pt-4 border-t border-slate-800 text-xs text-slate-500">
+            Источник: Хронометраж учебных сессий
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ================= SOLUTION & HOW IT WORKS ================= -->
+  <section id="solution" class="py-20 relative overflow-hidden">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <div class="text-center max-w-3xl mx-auto mb-16">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-xs font-semibold uppercase tracking-wider mb-3">
+          Инженерное решение
+        </div>
+        <h2 class="text-2xl sm:text-4xl font-extrabold text-white tracking-tight">
+          Как умный модуль вырабатывает автоматическую мышечную память
+        </h2>
+        <p class="text-slate-400 mt-3 text-sm sm:text-base">
+          Вместо многомиллионных VR-систем — физический датчик прямо на реальной рабочей горелке во время настоящей сварки.
+        </p>
+      </div>
+
+      <!-- 3-Step Process -->
+      <div class="grid md:grid-cols-3 gap-8 relative">
+        
+        <!-- Step 1 -->
+        <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-7 relative">
+          <div class="absolute -top-4 left-6 px-3 py-1 bg-slate-800 border border-slate-700 text-orange-400 font-mono text-xs font-bold rounded-full">
+            ЭТАП 01
+          </div>
+          <div class="mt-3">
+            <h3 class="text-lg font-bold text-white mb-2">Быстрая калибровка и монтаж</h3>
+            <p class="text-sm text-slate-400 leading-relaxed">
+              Модуль монтируется на рукоять горелки за 10 секунд. Преподаватель или сварщик выбирает тип пространственного шва (нижний, тавровый, угловой, вертикальный) и задает допустимый коридор угла (например, 70° ± 5°).
+            </p>
+          </div>
+          <div class="mt-6 flex items-center gap-3 text-xs text-slate-300 font-mono bg-slate-950 p-3 rounded-lg border border-slate-800/80">
+            <i data-lucide="sliders" class="w-4 h-4 text-cyan-400"></i>
+            <span>Калибровка нуля за 3 секунды</span>
+          </div>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-7 relative">
+          <div class="absolute -top-4 left-6 px-3 py-1 bg-slate-800 border border-slate-700 text-cyan-400 font-mono text-xs font-bold rounded-full">
+            ЭТАП 02
+          </div>
+          <div class="mt-3">
+            <h3 class="text-lg font-bold text-white mb-2">Фильтрация шумов и сварка</h3>
+            <p class="text-sm text-slate-400 leading-relaxed">
+              Ученик зажигает дугу. 6-осевой датчик IMU (акселерометр + гироскоп) отслеживает положение в пространстве, а фильтр Калмана на МК ESP32 полностью отсекает вибрации и помехи от электрической дуги.
+            </p>
+          </div>
+          <div class="mt-6 flex items-center gap-3 text-xs text-slate-300 font-mono bg-slate-950 p-3 rounded-lg border border-slate-800/80">
+            <i data-lucide="shield-check" class="w-4 h-4 text-emerald-400"></i>
+            <span>Ферритовые кольца и экранирование</span>
+          </div>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-7 relative">
+          <div class="absolute -top-4 left-6 px-3 py-1 bg-slate-800 border border-slate-700 text-emerald-400 font-mono text-xs font-bold rounded-full">
+            ЭТАП 03
+          </div>
+          <div class="mt-3">
+            <h3 class="text-lg font-bold text-white mb-2">Мгновенный рефлекс</h3>
+            <p class="text-sm text-slate-400 leading-relaxed">
+              При превышении допустимого угла (±2°) тренажер немедленно включает яркий периферийный светодиод и подает звуковой сигнал через пьезодинамик. Рука ученика рефлекторно выравнивается без участия мастера.
+            </p>
+          </div>
+          <div class="mt-6 flex items-center gap-3 text-xs text-slate-300 font-mono bg-slate-950 p-3 rounded-lg border border-slate-800/80">
+            <i data-lucide="bell" class="w-4 h-4 text-amber-400"></i>
+            <span>Свет + звук (пьезо) в шлем сварщика</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Technical Architecture Specs Banner -->
+      <div class="mt-12 bg-gradient-to-r from-slate-900 via-slate-850 to-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8">
+        <h3 class="text-lg font-bold text-white mb-6 flex items-center gap-2">
+          <i data-lucide="cpu" class="w-5 h-5 text-orange-400"></i>
+          <span>Технологический стек и аппаратные решения</span>
+        </h3>
+        <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div class="space-y-1">
+            <div class="text-xs uppercase text-slate-500 font-mono">Сенсорная база</div>
+            <div class="text-base font-bold text-slate-200">MPU-6050 / GY-521</div>
+            <p class="text-xs text-slate-400">6 DOF датчик ускорения и гироскопа с аппаратной компенсацией дрейфа</p>
+          </div>
+          <div class="space-y-1">
+            <div class="text-xs uppercase text-slate-500 font-mono">Вычислительный блок</div>
+            <div class="text-base font-bold text-slate-200">ESP32 Dual-Core</div>
+            <p class="text-xs text-slate-400">Алгоритмы быстрой фильтрации Калмана без задержек обратной связи</p>
+          </div>
+          <div class="space-y-1">
+            <div class="text-xs uppercase text-slate-500 font-mono">Помехозащита</div>
+            <div class="text-base font-bold text-slate-200">Феррит + Экранирование</div>
+            <p class="text-xs text-slate-400">Бесперебойная работа в зоне высоких высокочастотных электромагнитных полей</p>
+          </div>
+          <div class="space-y-1">
+            <div class="text-xs uppercase text-slate-500 font-mono">Образовательное ПО</div>
+            <div class="text-base font-bold text-slate-200">Режим «Тренер-Ученик»</div>
+            <p class="text-xs text-slate-400">Прошивка с предустановленными эталонами углов для ГОСТ соединений</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ================= INTERACTIVE SIMULATOR (DEMO) ================= -->
+  <section id="demo" class="py-20 bg-slate-950 border-y border-slate-800/80 relative">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <div class="grid lg:grid-cols-12 gap-12 items-center">
+        
+        <!-- Left: Simulator Controls -->
+        <div class="lg:col-span-6 space-y-6">
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-semibold uppercase tracking-wider">
+            Интерактивная модель обратной связи
+          </div>
+          <h2 class="text-2xl sm:text-4xl font-extrabold text-white tracking-tight">
+            Опробуйте логику тренажера прямо сейчас
+          </h2>
+          <p class="text-slate-300 text-sm sm:text-base leading-relaxed">
+            Подвигайте ползунок пространственного угла наклона сварочной горелки. Устройство запрограммировано на рабочий диапазон <strong class="text-white">45° (допуск ±2°)</strong>. Почувствуйте, как срабатывает мгновенная индикация при выходе из технологического окна.
+          </p>
+
+          <!-- Interactive Slider Box -->
+          <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-6">
+            
+            <div>
+              <div class="flex justify-between items-center mb-2">
+                <span class="text-sm font-medium text-slate-300">Текущий угол наклона горелки:</span>
+                <span id="angle-display" class="font-mono text-2xl font-bold text-emerald-400">45°</span>
+              </div>
+              <input 
+                id="angle-slider" 
+                type="range" 
+                min="30" 
+                max="60" 
+                value="45" 
+                step="0.5"
+                class="w-full h-3 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-orange-500 focus:outline-none"
+              >
+              <div class="flex justify-between text-[11px] text-slate-400 font-mono mt-1">
+                <span>30° (Опасное отклонение)</span>
+                <span class="text-emerald-400 font-bold">45° (Норма ±2°)</span>
+                <span>60° (Опасное отклонение)</span>
+              </div>
+            </div>
+
+            <!-- Quick Preset Buttons -->
+            <div class="flex flex-wrap gap-2 pt-2">
+              <span class="text-xs text-slate-400 self-center mr-1">Быстрые сценарии:</span>
+              <button onclick="setSimAngle(45)" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-slate-200 border border-slate-700 font-mono">
+                Идеально: 45°
+              </button>
+              <button onclick="setSimAngle(46.5)" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-slate-200 border border-slate-700 font-mono">
+                В допуске: 46.5°
+              </button>
+              <button onclick="setSimAngle(38)" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-rose-300 border border-rose-900 font-mono">
+                Брак (завал): 38°
+              </button>
+              <button onclick="setSimAngle(54)" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-rose-300 border border-rose-900 font-mono">
+                Брак (подъем): 54°
+              </button>
+            </div>
+
+            <!-- Sound toggle -->
+            <div class="flex items-center justify-between pt-3 border-t border-slate-800 text-xs text-slate-400">
+              <div class="flex items-center gap-2">
+                <i data-lucide="volume-2" class="w-4 h-4 text-slate-400"></i>
+                <span>Звуковой пьезо-сигнал (Web Audio API)</span>
+              </div>
+              <label class="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" id="sound-toggle" class="sr-only peer" checked>
+                <div class="w-9 h-5 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-orange-600"></div>
+              </label>
+            </div>
+
+          </div>
+
+        </div>
+
+        <!-- Right: Virtual HUD / Instrument Panel -->
+        <div class="lg:col-span-6">
+          <div id="hud-container" class="relative bg-slate-900 border-2 border-emerald-500/50 rounded-2xl p-8 transition-colors duration-300 shadow-2xl">
+            
+            <div class="flex items-center justify-between pb-4 border-b border-slate-800">
+              <div class="flex items-center gap-2">
+                <div id="hud-status-dot" class="w-3 h-3 rounded-full bg-emerald-400 animate-pulse"></div>
+                <span id="hud-status-text" class="text-xs font-mono font-bold tracking-wider text-emerald-400 uppercase">
+                  СТАТУС: ТЕХНОЛОГИЧЕСКИЙ ДОПУСК СОБЛЮДЕН
+                </span>
+              </div>
+              <span class="text-xs font-mono text-slate-500">ID: WELD-DEVICE-01</span>
+            </div>
+
+            <!-- Central Visual Gauge -->
+            <div class="py-10 flex flex-col items-center justify-center text-center">
+              
+              <!-- Circular Torch Angle Graphic -->
+              <div class="relative w-44 h-44 rounded-full border-4 border-slate-800 flex items-center justify-center bg-slate-950 shadow-inner">
+                
+                <!-- Target Zone Arc visual (43 to 47 deg) -->
+                <div class="absolute inset-2 rounded-full border-2 border-dashed border-emerald-500/30 pointer-events-none"></div>
+
+                <!-- Torch Needle pointer -->
+                <div id="gauge-needle" class="absolute w-1 h-20 bg-gradient-to-t from-transparent via-cyan-400 to-white origin-bottom bottom-1/2 rounded-full transition-transform duration-150" style="transform: rotate(0deg);"></div>
+
+                <!-- Central Hub -->
+                <div id="gauge-center" class="w-10 h-10 rounded-full bg-emerald-500 flex items-center justify-center text-slate-950 font-bold font-mono text-xs shadow-lg transition-colors duration-200">
+                  OK
+                </div>
+
+                <!-- Degree scale marks -->
+                <span class="absolute top-2 text-[10px] font-mono text-slate-500">45° (Эталон)</span>
+                <span class="absolute left-2 text-[10px] font-mono text-slate-500">30°</span>
+                <span class="absolute right-2 text-[10px] font-mono text-slate-500">60°</span>
+              </div>
+
+              <!-- Realtime Error Readout -->
+              <div class="mt-6">
+                <div class="text-xs text-slate-400 uppercase font-mono">Текущее отклонение от нормы</div>
+                <div id="deviation-display" class="text-2xl font-black font-mono text-emerald-400 mt-1">
+                  0.0° (В пределах ±2°)
+                </div>
+              </div>
+
+              <!-- Sound wave visualizer simulation -->
+              <div id="sound-alert-bar" class="mt-4 px-4 py-1.5 rounded-full bg-slate-800 text-xs font-mono text-slate-400 transition-all flex items-center gap-2">
+                <i data-lucide="volume-x" class="w-4 h-4"></i>
+                <span>Пьезо-зуммер безмолвен</span>
+              </div>
+
+            </div>
+
+            <!-- HUD Footer with diagnostic stats -->
+            <div class="grid grid-cols-3 gap-2 pt-4 border-t border-slate-800 text-center font-mono text-xs">
+              <div class="bg-slate-950 p-2 rounded">
+                <div class="text-[10px] text-slate-500">ЗАДЕРЖКА</div>
+                <div class="text-slate-300 font-bold">&lt; 15 мс</div>
+              </div>
+              <div class="bg-slate-950 p-2 rounded">
+                <div class="text-[10px] text-slate-500">РЕЖИМ</div>
+                <div class="text-cyan-400 font-bold">Обучение</div>
+              </div>
+              <div class="bg-slate-950 p-2 rounded">
+                <div class="text-[10px] text-slate-500">БАТАРЕЯ</div>
+                <div class="text-emerald-400 font-bold">98% (8.5ч)</div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ================= COMPETITOR COMPARISON TABLE ================= -->
+  <section id="comparison" class="py-20 relative">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <div class="text-center max-w-3xl mx-auto mb-16">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-500/10 border border-orange-500/20 text-orange-400 text-xs font-semibold uppercase tracking-wider mb-3">
+          Анализ рынка
+        </div>
+        <h2 class="text-2xl sm:text-4xl font-extrabold text-white tracking-tight">
+          Сравнение с зарубежными и VR-альтернативами
+        </h2>
+        <p class="text-slate-400 mt-3 text-sm sm:text-base">
+          Почему насадочный IMU-тренажер эффективнее тяжелых промышленных систем и очков виртуальной реальности при обучении базовым навыкам.
+        </p>
+      </div>
+
+      <!-- Table Container -->
+      <div class="overflow-x-auto rounded-2xl border border-slate-800 bg-slate-900/60 shadow-xl">
+        <table class="w-full text-left text-sm border-collapse">
+          <thead>
+            <tr class="border-b border-slate-800 bg-slate-950 text-xs font-mono uppercase text-slate-400">
+              <th class="p-5 font-semibold">Критерий оценки</th>
+              <th class="p-5 font-bold text-orange-400 bg-orange-950/20 border-x border-orange-500/20">
+                <div class="flex items-center gap-1.5">
+                  <i data-lucide="zap" class="w-4 h-4 text-orange-400"></i>
+                  <span>Наш тренажер (РФ)</span>
+                </div>
+              </th>
+              <th class="p-5 font-semibold text-slate-300">Fronius (Австрия)</th>
+              <th class="p-5 font-semibold text-slate-300">КЕДР-Сварка (Россия)</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-800 text-slate-300">
+            
+            <tr class="hover:bg-slate-800/40 transition">
+              <td class="p-5 font-semibold text-white flex items-center gap-2">
+                <i data-lucide="tag" class="w-4 h-4 text-slate-400"></i>
+                Стоимость за 1 рабочий пост
+              </td>
+              <td class="p-5 font-mono font-bold text-emerald-400 text-base bg-orange-950/10 border-x border-orange-500/20">
+                115 000 ₽
+                <div class="text-[11px] font-sans font-normal text-slate-400 mt-0.5">В 3-4 раза доступнее</div>
+              </td>
+              <td class="p-5 font-mono text-rose-300">от 450 000 ₽</td>
+              <td class="p-5 font-mono text-slate-300">290 000 ₽</td>
+            </tr>
+
+            <tr class="hover:bg-slate-800/40 transition">
+              <td class="p-5 font-semibold text-white flex items-center gap-2">
+                <i data-lucide="target" class="w-4 h-4 text-slate-400"></i>
+                Целевой фокус
+              </td>
+              <td class="p-5 font-medium text-white bg-orange-950/10 border-x border-orange-500/20">
+                Образование и мышечная память в реальной сварке
+              </td>
+              <td class="p-5 text-slate-400">Сложный промышленный мониторинг</td>
+              <td class="p-5 text-slate-400">Виртуальная реальность (VR) без тактильного контакта</td>
+            </tr>
+
+            <tr class="hover:bg-slate-800/40 transition">
+              <td class="p-5 font-semibold text-white flex items-center gap-2">
+                <i data-lucide="box" class="w-4 h-4 text-slate-400"></i>
+                Форм-фактор оборудования
+              </td>
+              <td class="p-5 font-medium text-white bg-orange-950/10 border-x border-orange-500/20">
+                Физический легкий модуль на реальной горелке
+              </td>
+              <td class="p-5 text-slate-400">Громоздкая система внешних датчиков</td>
+              <td class="p-5 text-slate-400">Шлем VR + контроллер-имитатор + мощный ПК</td>
+            </tr>
+
+            <tr class="hover:bg-slate-800/40 transition">
+              <td class="p-5 font-semibold text-white flex items-center gap-2">
+                <i data-lucide="play" class="w-4 h-4 text-slate-400"></i>
+                Простота использования
+              </td>
+              <td class="p-5 font-medium text-emerald-400 bg-orange-950/10 border-x border-orange-500/20">
+                «Включил и работай» (Plug & Play)
+              </td>
+              <td class="p-5 text-slate-400">Требует длительной калибровки инженером</td>
+              <td class="p-5 text-slate-400">Зависит от зарядки шлема, софта и настройки ПК</td>
+            </tr>
+
+            <tr class="hover:bg-slate-800/40 transition">
+              <td class="p-5 font-semibold text-white flex items-center gap-2">
+                <i data-lucide="headphones" class="w-4 h-4 text-slate-400"></i>
+                Сервис и импортонезависимость
+              </td>
+              <td class="p-5 font-medium text-white bg-orange-950/10 border-x border-orange-500/20">
+                100% РФ: бесплатное обновление ПО, выездное ТО
+              </td>
+              <td class="p-5 text-rose-400">Ограничено санкциями, сложный ввоз ЗИП</td>
+              <td class="p-5 text-slate-400">Платная техподдержка стороннего софта</td>
+            </tr>
+
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Market Size Summary Box -->
+      <div class="mt-8 grid sm:grid-cols-3 gap-6 text-center">
+        <div class="p-5 rounded-xl bg-slate-900 border border-slate-800">
+          <div class="text-xs text-slate-400 font-mono uppercase">Общий объем рынка (TAM)</div>
+          <div class="text-2xl font-bold text-white mt-1">~2.8 млрд ₽</div>
+          <div class="text-xs text-slate-500 mt-1">Все профильные образовательные заведения РФ</div>
+        </div>
+        <div class="p-5 rounded-xl bg-slate-900 border border-slate-800">
+          <div class="text-xs text-slate-400 font-mono uppercase">Доступный рынок (SAM)</div>
+          <div class="text-2xl font-bold text-cyan-400 mt-1">~900 млн ₽</div>
+          <div class="text-xs text-slate-500 mt-1">30% учреждений, готовых к инновациям</div>
+        </div>
+        <div class="p-5 rounded-xl bg-slate-900 border border-slate-800">
+          <div class="text-xs text-slate-400 font-mono uppercase">Цель 1-го года (SOM)</div>
+          <div class="text-2xl font-bold text-orange-400 mt-1">10 млн ₽</div>
+          <div class="text-xs text-slate-500 mt-1">Внедрение в 15–20 профильных колледжах</div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ================= TARGET AUDIENCES (B2B / B2G) ================= -->
+  <section id="audiences" class="py-20 bg-slate-900/40 relative">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <div class="text-center max-w-3xl mx-auto mb-16">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400 text-xs font-semibold uppercase tracking-wider mb-3">
+          Потребительские сегменты
+        </div>
+        <h2 class="text-2xl sm:text-4xl font-extrabold text-white tracking-tight">
+          Кому выгодно внедрение решения
+        </h2>
+        <p class="text-slate-400 mt-3 text-sm sm:text-base">
+          Продукт разработан с учетом нормативов госзакупок СПО и требований заводских отделов подготовки кадров.
+        </p>
+      </div>
+
+      <div class="grid lg:grid-cols-3 gap-8">
+        
+        <!-- Segment 1: SPO & Colleges -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-7 flex flex-col justify-between hover:border-slate-700 transition">
+          <div>
+            <div class="w-12 h-12 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 mb-6">
+              <i data-lucide="graduation-cap" class="w-6 h-6"></i>
+            </div>
+            <h3 class="text-xl font-bold text-white mb-3">
+              Государственные колледжи, техникумы и ПТУ
+            </h3>
+            <p class="text-sm text-slate-400 leading-relaxed mb-6">
+              Бюджетные учреждения с закупками по 44-ФЗ и 223-ФЗ в рамках федеральных программ модернизации мастерских («Профессионалитет»).
+            </p>
+            <ul class="space-y-2.5 text-xs text-slate-300">
+              <li class="flex items-start gap-2">
+                <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400 shrink-0 mt-0.5"></i>
+                <span>Экономия дефицитного фонда расходных материалов</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400 shrink-0 mt-0.5"></i>
+                <span>Объективная сдача демо-экзаменов и нормативов</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400 shrink-0 mt-0.5"></i>
+                <span>Методические комплексы и программы для преподавателей</span>
+              </li>
+            </ul>
+          </div>
+          <div class="mt-8 pt-4 border-t border-slate-800 text-xs font-mono text-cyan-400">
+            Канал: Прямые закупки по госзаданию
+          </div>
+        </div>
+
+        <!-- Segment 2: Factories & Corporate Centers -->
+        <div class="bg-slate-900 border border-orange-500/40 rounded-2xl p-7 flex flex-col justify-between relative shadow-lg shadow-orange-500/5">
+          <div class="absolute -top-3 right-6 bg-orange-600 text-slate-950 font-mono text-[10px] font-bold px-3 py-0.5 rounded-full uppercase">
+            Максимальный ROI
+          </div>
+          <div>
+            <div class="w-12 h-12 rounded-xl bg-orange-500/10 border border-orange-500/30 flex items-center justify-center text-orange-400 mb-6">
+              <i data-lucide="factory" class="w-6 h-6"></i>
+            </div>
+            <h3 class="text-xl font-bold text-white mb-3">
+              Корпоративные учебные центры заводов
+            </h3>
+            <p class="text-sm text-slate-400 leading-relaxed mb-6">
+              Машиностроение, судостроение, мостостроение, нефтегазовый комплекс (ТЭК) со строгими стандартами качества шва.
+            </p>
+            <ul class="space-y-2.5 text-xs text-slate-300">
+              <li class="flex items-start gap-2">
+                <i data-lucide="check-circle-2" class="w-4 h-4 text-orange-400 shrink-0 mt-0.5"></i>
+                <span>Ускоренный ввод молодых сварщиков в рабочий цикл цеха</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <i data-lucide="check-circle-2" class="w-4 h-4 text-orange-400 shrink-0 mt-0.5"></i>
+                <span>Предотвращение брака на ответственных резервуарах и трубах</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <i data-lucide="check-circle-2" class="w-4 h-4 text-orange-400 shrink-0 mt-0.5"></i>
+                <span>Аттестация специалистов перед сложными контрактами</span>
+              </li>
+            </ul>
+          </div>
+          <div class="mt-8 pt-4 border-t border-slate-800 text-xs font-mono text-orange-400">
+            Канал: Прямые поставки и сервисная аренда
+          </div>
+        </div>
+
+        <!-- Segment 3: Commercial Training & Certification Centers -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-7 flex flex-col justify-between hover:border-slate-700 transition">
+          <div>
+            <div class="w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-400 mb-6">
+              <i data-lucide="award" class="w-6 h-6"></i>
+            </div>
+            <h3 class="text-xl font-bold text-white mb-3">
+              Коммерческие курсы и центры НАКС
+            </h3>
+            <p class="text-sm text-slate-400 leading-relaxed mb-6">
+              Платные школы сварки и центры переподготовки кадров, борющиеся за качество обучения и высокий средний чек.
+            </p>
+            <ul class="space-y-2.5 text-xs text-slate-300">
+              <li class="flex items-start gap-2">
+                <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400 shrink-0 mt-0.5"></i>
+                <span>Увеличение пропускной способности мастера на 40%</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400 shrink-0 mt-0.5"></i>
+                <span>Сильное конкурентное преимущество перед курсами «по старинке»</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400 shrink-0 mt-0.5"></i>
+                <span>Наглядный прогресс ученика от занятия к занятию</span>
+              </li>
+            </ul>
+          </div>
+          <div class="mt-8 pt-4 border-t border-slate-800 text-xs font-mono text-purple-400">
+            Канал: Пакетные предложения (3 датчика + методика)
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ================= LETTERS OF SUPPORT / SCIENTIFIC BACKGROUND ================= -->
+  <section id="letters" class="py-20 relative">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <div class="text-center max-w-3xl mx-auto mb-16">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold uppercase tracking-wider mb-3">
+          Документальные подтверждения
+        </div>
+        <h2 class="text-2xl sm:text-4xl font-extrabold text-white tracking-tight">
+          Подтвержденный спрос от реального сектора промышленности
+        </h2>
+        <p class="text-slate-400 mt-3 text-sm sm:text-base">
+          Предприятия выразили официальную готовность выступить первыми заказчиками опытно-промышленных образцов.
+        </p>
+      </div>
+
+      <div class="grid md:grid-cols-2 gap-8">
+        
+        <!-- Letter 1: OOO Kraft Pump -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-7 relative">
+          <div class="flex items-start justify-between mb-4">
+            <div>
+              <div class="text-xs font-mono text-slate-500">Исх. № 154 от 12.03.2026 г.</div>
+              <h3 class="text-lg font-bold text-white mt-1">ООО «Крафт Памп»</h3>
+              <p class="text-xs text-slate-400">Производство насосного оборудования, г. Уфа</p>
+            </div>
+            <div class="p-2 rounded bg-slate-800 border border-slate-700 text-cyan-400">
+              <i data-lucide="file-check-2" class="w-6 h-6"></i>
+            </div>
+          </div>
+          <blockquote class="text-sm text-slate-300 italic border-l-2 border-cyan-500 pl-4 py-1 my-4">
+            «Настоящим письмом ООО «Крафт Памп» выражает заинтересованность в проекте Бетильмерзаева Кунта Хасмагомедовича «Умный тренажер для сварки». Планируем выступить заказчиками разработки в количестве 1 единицы...»
+          </blockquote>
+          <div class="pt-4 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400 font-mono">
+            <span>Директор: Давлетгареев Ф.Ф.</span>
+            <span class="text-emerald-400">✓ Печать и подпись заверены</span>
+          </div>
+        </div>
+
+        <!-- Letter 2: Bashneft-Stroy -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-7 relative">
+          <div class="flex items-start justify-between mb-4">
+            <div>
+              <div class="text-xs font-mono text-slate-500">Исх. № 02/26-СТМ от 13.03.2026 г.</div>
+              <h3 class="text-lg font-bold text-white mt-1">ООО «Башнефть-Строй»</h3>
+              <p class="text-xs text-slate-400">Строительство объектов нефтегазодобычи</p>
+            </div>
+            <div class="p-2 rounded bg-slate-800 border border-slate-700 text-orange-400">
+              <i data-lucide="file-check-2" class="w-6 h-6"></i>
+            </div>
+          </div>
+          <blockquote class="text-sm text-slate-300 italic border-l-2 border-orange-500 pl-4 py-1 my-4">
+            «Настоящим письмом ООО «Башнефть Строй» выражает заинтересованность в проекте «Умный тренажер для сварки». Планируем выступить заказчиками разработки опытно-промышленного образца в количестве 1 единицы...»
+          </blockquote>
+          <div class="pt-4 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400 font-mono">
+            <span>Главный механик: Титов Д.Н.</span>
+            <span class="text-emerald-400">✓ Опытно-промышленный партнер</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Roadmap Timeline from Presentation -->
+      <div class="mt-16 bg-slate-900/60 border border-slate-800 rounded-2xl p-8">
+        <h3 class="text-lg font-bold text-white mb-8 flex items-center gap-2">
+          <i data-lucide="milestone" class="w-5 h-5 text-cyan-400"></i>
+          <span>Календарный план реализации проекта (Грант 12 месяцев)</span>
+        </h3>
+        
+        <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 relative">
+          
+          <div class="border-l-2 border-slate-700 pl-4 space-y-1">
+            <span class="text-xs font-mono font-bold text-orange-400">1 КВАРТАЛ (МЕС. 1–3)</span>
+            <h4 class="text-sm font-bold text-white">Подготовительный</h4>
+            <p class="text-xs text-slate-400 leading-relaxed">
+              Регистрация ООО. Разработка габаритных чертежей корпуса, спецификация и готовая 3D-модель под печать.
+            </p>
+          </div>
+
+          <div class="border-l-2 border-cyan-500 pl-4 space-y-1">
+            <span class="text-xs font-mono font-bold text-cyan-400">2 КВАРТАЛ (МЕС. 4–6)</span>
+            <h4 class="text-sm font-bold text-white">Испытания и доработка</h4>
+            <p class="text-xs text-slate-400 leading-relaxed">
+              Лабораторные тесты на помехозащиту, полевые испытания на полигоне УГНТУ. Протокол испытаний, калибровка фильтров Калмана.
+            </p>
+          </div>
+
+          <div class="border-l-2 border-purple-500 pl-4 space-y-1">
+            <span class="text-xs font-mono font-bold text-purple-400">3 КВАРТАЛ (МЕС. 7–9)</span>
+            <h4 class="text-sm font-bold text-white">Пилотная партия</h4>
+            <p class="text-xs text-slate-400 leading-relaxed">
+              Закупка компонентов, сборка пилотной серии из 5–7 тренажеров, сертификация, подготовка методических пособий.
+            </p>
+          </div>
+
+          <div class="border-l-2 border-emerald-500 pl-4 space-y-1">
+            <span class="text-xs font-mono font-bold text-emerald-400">4 КВАРТАЛ (МЕС. 10–12)</span>
+            <h4 class="text-sm font-bold text-white">Внедрение и контракты</h4>
+            <p class="text-xs text-slate-400 leading-relaxed">
+              Установка в мастерские УГНТУ, обучение преподавателей, оформление патента, первые коммерческие контракты.
+            </p>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ================= TEAM SECTION ================= -->
+  <section class="py-20 bg-slate-900/40 relative">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <div class="text-center max-w-3xl mx-auto mb-16">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-800 border border-slate-700 text-slate-300 text-xs font-semibold uppercase tracking-wider mb-3">
+          Квалификация и команда
+        </div>
+        <h2 class="text-2xl sm:text-4xl font-extrabold text-white tracking-tight">
+          Разработчики и научные кураторы
+        </h2>
+        <p class="text-slate-400 mt-3 text-sm sm:text-base">
+          Синтез сварочной инженерии, микроэлектроники и опыта трансфера университетских технологий.
+        </p>
+      </div>
+
+      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-5xl mx-auto">
+        
+        <!-- Member 1 -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 text-center">
+          <div class="w-24 h-24 mx-auto mb-4 rounded-full bg-gradient-to-tr from-orange-500 to-amber-400 p-1 flex items-center justify-center">
+            <div class="w-full h-full rounded-full bg-slate-950 flex items-center justify-center text-slate-300 font-bold text-2xl font-mono">
+              КБ
+            </div>
+          </div>
+          <h3 class="text-lg font-bold text-white">Бетильмерзаев Кунт</h3>
+          <p class="text-xs font-mono text-orange-400 mb-3">Руководитель проекта / Заявитель</p>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            Автор схемотехнической концепции насадочного модуля, алгоритмов компенсации погрешностей и координатор полигонных тестов на базе УГНТУ.
+          </p>
+        </div>
+
+        <!-- Member 2 -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 text-center">
+          <div class="w-24 h-24 mx-auto mb-4 rounded-full bg-gradient-to-tr from-cyan-500 to-blue-500 p-1 flex items-center justify-center">
+            <div class="w-full h-full rounded-full bg-slate-950 flex items-center justify-center text-slate-300 font-bold text-2xl font-mono">
+              АИ
+            </div>
+          </div>
+          <h3 class="text-lg font-bold text-white">Азамат Илалов</h3>
+          <p class="text-xs font-mono text-cyan-400 mb-3">Координатор проекта</p>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            Заместитель директора по технологическому предпринимательству. Куратор коммерциализации, защиты РИД и взаимодействия с индустриальными заказчиками.
+          </p>
+        </div>
+
+        <!-- Member 3: Experts Pool -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 text-center md:col-span-2 lg:col-span-1">
+          <div class="w-24 h-24 mx-auto mb-4 rounded-full bg-gradient-to-tr from-purple-500 to-rose-500 p-1 flex items-center justify-center">
+            <div class="w-full h-full rounded-full bg-slate-950 flex items-center justify-center text-slate-300 font-bold text-2xl font-mono">
+              <i data-lucide="users" class="w-8 h-8 text-purple-400"></i>
+            </div>
+          </div>
+          <h3 class="text-lg font-bold text-white">Инженерная группа</h3>
+          <p class="text-xs font-mono text-purple-400 mb-3">Программисты и 3D-моделлеры</p>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            Программист микроконтроллеров (RTOS/C++), инженер-схемотехник, специалист по термостойким корпусам и патентный поверенный проекта.
+          </p>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ================= BUDGET & SPECIFICATION ================= -->
+  <section id="budget" class="py-20 relative">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <div class="grid lg:grid-cols-12 gap-12 items-center">
+        
+        <div class="lg:col-span-6 space-y-6">
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-800 border border-slate-700 text-slate-300 text-xs font-semibold uppercase tracking-wider">
+            Финансовая прозрачность
+          </div>
+          <h2 class="text-2xl sm:text-4xl font-extrabold text-white tracking-tight">
+            Смета опытно-промышленной разработки
+          </h2>
+          <p class="text-slate-300 text-sm sm:text-base leading-relaxed">
+            Финансирование разработки прототипа и опытной партии обеспечено в рамках гранта программы «Студенческий стартап» (1 000 000 ₽) с привлечением 500 000 ₽ софинансирования и производственных мощностей университета.
+          </p>
+
+          <div class="space-y-3">
+            <div class="flex items-center justify-between p-3.5 rounded-xl bg-slate-900 border border-slate-800 text-sm">
+              <span class="text-slate-300 font-medium">Фонд оплаты труда инженеров и программистов</span>
+              <span class="font-mono font-bold text-white">400 000 ₽</span>
+            </div>
+            <div class="flex items-center justify-between p-3.5 rounded-xl bg-slate-900 border border-slate-800 text-sm">
+              <span class="text-slate-300 font-medium">Сварочное оборудование и блоки мониторинга</span>
+              <span class="font-mono font-bold text-white">200 000 ₽</span>
+            </div>
+            <div class="flex items-center justify-between p-3.5 rounded-xl bg-slate-900 border border-slate-800 text-sm">
+              <span class="text-slate-300 font-medium">Вычислительные станции для моделирования</span>
+              <span class="font-mono font-bold text-white">200 000 ₽</span>
+            </div>
+            <div class="flex items-center justify-between p-3.5 rounded-xl bg-slate-900 border border-slate-800 text-sm">
+              <span class="text-slate-300 font-medium">3D-принтер для корпусирования образцов</span>
+              <span class="font-mono font-bold text-white">50 000 ₽</span>
+            </div>
+            <div class="flex items-center justify-between p-3.5 rounded-xl bg-slate-900 border border-slate-800 text-sm">
+              <span class="text-slate-300 font-medium">Регистрация ООО и оформление патента на РИД</span>
+              <span class="font-mono font-bold text-white">50 000 ₽</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Commercial Pricing Card -->
+        <div class="lg:col-span-6">
+          <div class="bg-gradient-to-b from-slate-900 to-slate-950 border-2 border-orange-500/40 rounded-3xl p-8 shadow-2xl relative">
+            <div class="inline-block px-3 py-1 bg-orange-500 text-slate-950 text-xs font-bold uppercase rounded-md tracking-wider mb-4">
+              Готовая спецификация для внедрения
+            </div>
+            
+            <h3 class="text-2xl font-bold text-white">Комплект «Образовательный пост»</h3>
+            <div class="mt-4 flex items-baseline gap-2">
+              <span class="text-4xl font-extrabold text-white font-mono">115 000 ₽</span>
+              <span class="text-xs text-slate-400">/ 1 тренажерный комплекс</span>
+            </div>
+            <p class="text-xs text-slate-400 mt-1">Окупаемость за счет снижения брака расходных материалов — 6–8 месяцев</p>
+
+            <div class="my-6 space-y-3 border-y border-slate-800 py-6 text-sm text-slate-300">
+              <div class="flex items-center gap-3">
+                <i data-lucide="check" class="w-5 h-5 text-emerald-400"></i>
+                <span>Защищенный модуль с датчиком MPU-6050 и MCU ESP32</span>
+              </div>
+              <div class="flex items-center gap-3">
+                <i data-lucide="check" class="w-5 h-5 text-emerald-400"></i>
+                <span>Комплект универсальных термостойких креплений к горелкам</span>
+              </div>
+              <div class="flex items-center gap-3">
+                <i data-lucide="check" class="w-5 h-5 text-emerald-400"></i>
+                <span>Зарядная док-станция с автономностью 8+ часов</span>
+              </div>
+              <div class="flex items-center gap-3">
+                <i data-lucide="check" class="w-5 h-5 text-emerald-400"></i>
+                <span>Методическое пособие для наставников и мастеров СПО</span>
+              </div>
+              <div class="flex items-center gap-3">
+                <i data-lucide="check" class="w-5 h-5 text-emerald-400"></i>
+                <span>Бесплатное обновление встроенного ПО и гарантия 12 мес.</span>
+              </div>
+            </div>
+
+            <a href="#lead-form" class="block w-full py-4 text-center rounded-xl font-bold text-slate-950 bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-300 hover:to-orange-400 transition shadow-lg shadow-orange-500/20">
+              Запросить КП и проект договора поставки
+            </a>
+
+            <div class="text-center mt-3 text-[11px] text-slate-500">
+              Возможна поставка через тендерные процедуры по 44-ФЗ и 223-ФЗ
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ================= LEAD CAPTURE FORM ================= -->
+  <section id="lead-form" class="py-20 bg-slate-950 border-t border-slate-800 relative">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <div class="bg-gradient-to-tr from-slate-900 via-slate-900 to-slate-850 border border-slate-700/80 rounded-3xl p-8 sm:p-12 shadow-2xl relative overflow-hidden">
+        
+        <!-- Glow accents -->
+        <div class="absolute -top-24 -right-24 w-48 h-48 bg-orange-500/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="absolute -bottom-24 -left-24 w-48 h-48 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div class="text-center max-w-2xl mx-auto mb-10">
+          <h2 class="text-2xl sm:text-3xl font-extrabold text-white">
+            Закажите демонстрацию умного тренажера в вашем учебном центре
+          </h2>
+          <p class="text-slate-400 text-sm mt-3">
+            Оставьте заявку, чтобы получить подробную презентацию, проект договора, расчет окупаемости для вашей группы и согласовать дату выездного тест-драйва.
+          </p>
+        </div>
+
+        <form id="contact-form" onsubmit="handleFormSubmit(event)" class="space-y-5">
+          <div class="grid sm:grid-cols-2 gap-5">
+            <div>
+              <label class="block text-xs font-medium text-slate-300 uppercase font-mono mb-2">Ваше имя / Должность</label>
+              <input 
+                type="text" 
+                required 
+                placeholder="Иван Иванов, зам. директора по УПР"
+                class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-orange-500 transition"
+              >
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-300 uppercase font-mono mb-2">Название учреждения / завода</label>
+              <input 
+                type="text" 
+                required 
+                placeholder="Колледж СПО / Машиностроительный завод"
+                class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-orange-500 transition"
+              >
+            </div>
+          </div>
+
+          <div class="grid sm:grid-cols-2 gap-5">
+            <div>
+              <label class="block text-xs font-medium text-slate-300 uppercase font-mono mb-2">Контактный телефон</label>
+              <input 
+                type="tel" 
+                required 
+                placeholder="+7 (___) ___-__-__"
+                class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-orange-500 transition"
+              >
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-300 uppercase font-mono mb-2">Рабочий Email</label>
+              <input 
+                type="email" 
+                required 
+                placeholder="college@edu.ru / info@zavod.ru"
+                class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-orange-500 transition"
+              >
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium text-slate-300 uppercase font-mono mb-2">Интересующее количество рабочих постов</label>
+            <select class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3.5 text-sm text-slate-300 focus:outline-none focus:border-orange-500 transition">
+              <option value="1">1 опытный образец на тестирование</option>
+              <option value="3-5">3–5 тренажеров (Мастерская на подгруппу)</option>
+              <option value="10+">10+ комплексов (Полное переоснащение полигона)</option>
+              <option value="pilot">Запрос на пилотную апробацию / аренда</option>
+            </select>
+          </div>
+
+          <div class="pt-2">
+            <button 
+              type="submit" 
+              class="w-full py-4 rounded-xl font-bold text-slate-950 bg-gradient-to-r from-amber-400 via-orange-500 to-amber-500 hover:from-amber-300 hover:to-orange-400 transition shadow-xl shadow-orange-500/25 flex items-center justify-center gap-2"
+            >
+              <i data-lucide="send" class="w-5 h-5 text-slate-950"></i>
+              <span>Отправить заявку руководителю проекта</span>
+            </button>
+          </div>
+
+          <div class="text-center text-xs text-slate-500">
+            Нажимая кнопку, вы соглашаетесь на обработку персональных данных для подготовки коммерческого предложения.
+          </div>
+        </form>
+
+        <!-- Message Box upon Submit -->
+        <div id="form-success-msg" class="hidden mt-6 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-center text-sm">
+          <i data-lucide="check-circle" class="w-6 h-6 mx-auto mb-2 text-emerald-400"></i>
+          Спасибо за заявку! Руководитель проекта свяжется с вами в течение 24 часов.
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ================= CONTACTS & FOOTER ================= -->
+  <footer id="contacts" class="bg-slate-950 border-t border-slate-800 text-slate-400 py-16">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-10 pb-12 border-b border-slate-800">
+        
+        <!-- Col 1: Brand & Desc -->
+        <div class="space-y-3">
+          <div class="flex items-center gap-2 text-white font-extrabold text-lg">
+            <i data-lucide="flame" class="w-5 h-5 text-orange-500"></i>
+            <span>WeldSmart Tech</span>
+          </div>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            Разработка умного тренажера-корректора для формирования мышечной памяти сварщиков в образовательном и промышленном секторе.
+          </p>
+          <div class="text-xs font-mono text-slate-500">
+            Номер грантовой заявки: СтС-623172
+          </div>
+        </div>
+
+        <!-- Col 2: Direct Contact -->
+        <div class="space-y-3">
+          <div class="text-xs font-mono uppercase text-slate-300 font-bold">Контакты разработчика</div>
+          <div class="space-y-2 text-sm">
+            <div class="text-white font-medium">Бетильмерзаев Кунт Хасмагомедович</div>
+            <a href="tel:+79177384554" class="block text-slate-300 hover:text-orange-400 transition font-mono">
+              +7 (917) 738-45-54
+            </a>
+            <a href="mailto:kunt.betilmerzaev@mail.ru" class="block text-slate-300 hover:text-orange-400 transition font-mono">
+              kunt.betilmerzaev@mail.ru
+            </a>
+          </div>
+        </div>
+
+        <!-- Col 3: Location & Testing Ground -->
+        <div class="space-y-3">
+          <div class="text-xs font-mono uppercase text-slate-300 font-bold">Локация и полигон</div>
+          <div class="text-xs text-slate-400 leading-relaxed">
+            Республика Башкортостан, г. Уфа.<br>
+            Испытательный сварочный полигон на базе ФГБОУ ВО «УГНТУ».
+          </div>
+          <div class="pt-1">
+            <span class="inline-flex items-center gap-1.5 text-xs text-emerald-400 font-medium">
+              <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+              Лаборатория открыта для визитов
+            </span>
+          </div>
+        </div>
+
+        <!-- Col 4: Institutional Acknowledgements -->
+        <div class="space-y-3">
+          <div class="text-xs font-mono uppercase text-slate-300 font-bold">Федеральные программы</div>
+          <div class="text-xs text-slate-400 leading-relaxed">
+            Проект реализуется в рамках программы «Студенческий стартап» Федерального проекта «Платформа университетского технологического предпринимательства».
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Bottom Bar -->
+      <div class="pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-4">
+        <div>
+          © 2026 Умный тренажер для сварки. Все права защищены.
+        </div>
+        <div class="flex gap-6">
+          <a href="#" class="hover:text-slate-400">Политика конфиденциальности</a>
+          <a href="#" class="hover:text-slate-400">Сертификаты и ГОСТы</a>
+          <a href="#budget" class="hover:text-slate-400">Спецификация оборудования</a>
+        </div>
+      </div>
+
+    </div>
+  </footer>
+
+  <!-- ================= JAVASCRIPT: SIMULATOR & INTERACTIONS ================= -->
+  <script>
+    // Initialize Lucide Icons
+    lucide.createIcons();
+
+    // Mobile Menu Toggle
+    const mobileBtn = document.getElementById('mobile-menu-btn');
+    const mobileMenu = document.getElementById('mobile-menu');
+    mobileBtn.addEventListener('click', () => {
+      mobileMenu.classList.toggle('hidden');
+    });
+
+    // Close mobile menu on clicking any link
+    document.querySelectorAll('.mobile-nav-link').forEach(link => {
+      link.addEventListener('click', () => {
+        mobileMenu.classList.add('hidden');
+      });
+    });
+
+    // Web Audio API Synthesizer for Piezo Simulation
+    let audioCtx = null;
+    let beepingInterval = null;
+
+    function playBeep(freq = 880, duration = 0.08) {
+      const soundEnabled = document.getElementById('sound-toggle').checked;
+      if (!soundEnabled) return;
+
+      try {
+        if (!audioCtx) {
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+
+        osc.type = 'square'; // Harsh square wave mimics piezo buzzer
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+
+        gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+      } catch (e) {
+        console.warn('Audio not allowed yet or not supported', e);
+      }
+    }
+
+    // Interactive Slider Logic
+    const angleSlider = document.getElementById('angle-slider');
+    const angleDisplay = document.getElementById('angle-display');
+    const deviationDisplay = document.getElementById('deviation-display');
+    const hudContainer = document.getElementById('hud-container');
+    const hudStatusDot = document.getElementById('hud-status-dot');
+    const hudStatusText = document.getElementById('hud-status-text');
+    const needle = document.getElementById('gauge-needle');
+    const gaugeCenter = document.getElementById('gauge-center');
+    const soundAlertBar = document.getElementById('sound-alert-bar');
+
+    // Hero preview mini widgets
+    const sensorModuleBadge = document.getElementById('sensor-module-badge');
+    const sensorLedPill = document.getElementById('sensor-led-pill');
+    const sensorStatusLabel = document.getElementById('sensor-status-label');
+    const sensorAngleVal = document.getElementById('sensor-angle-val');
+
+    const TARGET_ANGLE = 45;
+    const TOLERANCE = 2; // ±2 degrees as in presentation
+
+    function updateSimulation(angle) {
+      const diff = Math.abs(angle - TARGET_ANGLE);
+      const isOk = diff <= TOLERANCE;
+
+      // Update Slider value & Texts
+      angleDisplay.textContent = `${angle}°`;
+      sensorAngleVal.textContent = `${angle}°`;
+
+      // Calculate needle rotation: from -45deg to +45deg based on 30..60 scale
+      const rotationDeg = (angle - TARGET_ANGLE) * 3;
+      needle.style.transform = `rotate(${rotationDeg}deg)`;
+
+      if (isOk) {
+        // GREEN STATE (Good angle)
+        hudContainer.className = "relative bg-slate-900 border-2 border-emerald-500/50 rounded-2xl p-8 transition-colors duration-300 shadow-2xl";
+        hudStatusDot.className = "w-3 h-3 rounded-full bg-emerald-400 animate-pulse";
+        hudStatusText.className = "text-xs font-mono font-bold tracking-wider text-emerald-400 uppercase";
+        hudStatusText.textContent = "СТАТУС: ТЕХНОЛОГИЧЕСКИЙ ДОПУСК СОБЛЮДЕН";
+
+        deviationDisplay.className = "text-2xl font-black font-mono text-emerald-400 mt-1";
+        deviationDisplay.textContent = `${(angle - TARGET_ANGLE).toFixed(1)}° (В норме ±${TOLERANCE}°)`;
+
+        gaugeCenter.className = "w-10 h-10 rounded-full bg-emerald-500 flex items-center justify-center text-slate-950 font-bold font-mono text-xs shadow-lg transition-colors duration-200";
+        gaugeCenter.textContent = "OK";
+
+        soundAlertBar.className = "mt-4 px-4 py-1.5 rounded-full bg-slate-800 text-xs font-mono text-slate-400 transition-all flex items-center gap-2";
+        soundAlertBar.innerHTML = `<i data-lucide="volume-x" class="w-4 h-4"></i><span>Пьезо-зуммер безмолвен (норма)</span>`;
+
+        // Hero card sync
+        sensorModuleBadge.className = "absolute -top-7 left-6 px-3 py-1.5 rounded-lg bg-slate-800 border-2 border-emerald-500 shadow-lg text-left transition-all duration-300";
+        sensorLedPill.className = "w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse";
+        sensorStatusLabel.className = "text-[10px] font-mono font-bold text-emerald-300";
+        sensorStatusLabel.textContent = "УГОЛ НОРМА";
+
+        if (beepingInterval) {
+          clearInterval(beepingInterval);
+          beepingInterval = null;
+        }
+
+      } else {
+        // RED ALERT STATE (Deviation > 2 deg)
+        hudContainer.className = "relative bg-slate-900 border-2 border-rose-500 rounded-2xl p-8 transition-colors duration-300 shadow-2xl shadow-rose-950/40";
+        hudStatusDot.className = "w-3 h-3 rounded-full bg-rose-500 animate-ping";
+        hudStatusText.className = "text-xs font-mono font-bold tracking-wider text-rose-400 uppercase";
+        hudStatusText.textContent = "ВНИМАНИЕ: КРИТИЧЕСКОЕ ОТКЛОНЕНИЕ ОТ ШВА!";
+
+        deviationDisplay.className = "text-2xl font-black font-mono text-rose-400 mt-1 animate-pulse";
+        deviationDisplay.textContent = `${angle > TARGET_ANGLE ? '+' : ''}${(angle - TARGET_ANGLE).toFixed(1)}° (БРАК ШВА)`;
+
+        gaugeCenter.className = "w-10 h-10 rounded-full bg-rose-500 flex items-center justify-center text-white font-bold font-mono text-xs shadow-lg transition-colors duration-200 animate-pulse";
+        gaugeCenter.textContent = "ALARM";
+
+        soundAlertBar.className = "mt-4 px-4 py-1.5 rounded-full bg-rose-500/20 text-xs font-mono text-rose-300 border border-rose-500/40 transition-all flex items-center gap-2 animate-bounce";
+        soundAlertBar.innerHTML = `<i data-lucide="volume-2" class="w-4 h-4 text-rose-400"></i><span>АКТИВЕН ЗВУКОВОЙ СИГНАЛ ТРЕВОГИ</span>`;
+
+        // Hero card sync
+        sensorModuleBadge.className = "absolute -top-7 left-6 px-3 py-1.5 rounded-lg bg-slate-800 border-2 border-rose-500 shadow-lg text-left transition-all duration-300";
+        sensorLedPill.className = "w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping";
+        sensorStatusLabel.className = "text-[10px] font-mono font-bold text-rose-400";
+        sensorStatusLabel.textContent = "ОШИБКА УГЛА";
+
+        // Sound trigger
+        playBeep(920, 0.09);
+      }
+
+      // Re-trigger icon rendering for dynamically inserted icons
+      lucide.createIcons();
+    }
+
+    angleSlider.addEventListener('input', (e) => {
+      updateSimulation(parseFloat(e.target.value));
+    });
+
+    window.setSimAngle = function(val) {
+      angleSlider.value = val;
+      updateSimulation(val);
+    };
+
+    // Form submission handler
+    function handleFormSubmit(e) {
+      e.preventDefault();
+      const form = document.getElementById('contact-form');
+      const successMsg = document.getElementById('form-success-msg');
+      
+      form.classList.add('opacity-40', 'pointer-events-none');
+      successMsg.classList.remove('hidden');
+      lucide.createIcons();
+    }
+  </script>
+
+</body>
+</html>
